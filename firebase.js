@@ -1,12 +1,13 @@
 // Inserta aquí tu firebaseConfig (README explica cómo obtenerlo)
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_DOMINIO.firebaseapp.com",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_BUCKET.appspot.com",
-  messagingSenderId: "TU_SENDER",
-  appId: "TU_APP_ID"
+ apiKey: "AIzaSyBt9G1cE4iB9fRBeWfw9HjXYGUOsjLGClI",
+  authDomain: "nexus-erp-86bf6.firebaseapp.com",
+  projectId: "nexus-erp-86bf6",
+  storageBucket: "nexus-erp-86bf6.firebasestorage.app",
+  messagingSenderId: "61036292897",
+  appId: "1:61036292897:web:1a92796e0892fb2c23ac60"
 };
+
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
