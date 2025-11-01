@@ -11,12 +11,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
 
 export const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_AUTH_DOMAIN",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_STORAGE_BUCKET",
-  messagingSenderId: "TU_MSG_SENDER_ID",
-  appId: "TU_APP_ID"
+  apiKey: "AIzaSyBt9G1cE4iB9fRBeWfw9HjXYGUOsjLGClI",
+  authDomain: "nexus-erp-86bf6.firebaseapp.com",
+  projectId: "nexus-erp-86bf6",
+  storageBucket: "nexus-erp-86bf6.firebasestorage.app",
+  messagingSenderId: "61036292897",
+  appId: "1:61036292897:web:1a92796e0892fb2c23ac60"
 };
 
 export const app = initializeApp(firebaseConfig);
