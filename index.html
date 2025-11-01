@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>ContaGlass PWA</title>
+  <meta name="theme-color" content="#0b0f14" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icons/icon-192.png" sizes="192x192">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Chart.js & jsPDF (CDN) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <!-- Firebase v9 Modular (CDN) -->
+  <script type="module" defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+  <script type="module" defer src="firebase.js"></script>
+  <script type="module" defer src="payroll.js"></script>
+  <script type="module" defer src="app.js"></script>
+</head>
+<body>
+  <!-- Aviso nueva versión -->
+  <div id="update-toast" class="toast hidden">
+    Nueva versión disponible.
+    <button id="btn-refresh" class="btn gold">Actualizar</button>
+  </div>
+
+  <!-- Botón instalar PWA -->
+  <button id="btn-install" class="btn install hidden">Instalar</button>
+
+  <!-- Login -->
+  <main id="login-view" class="center-screen">
+    <div class="card glass login-card">
+      <img id="login-logo" src="assets/logo.png" alt="Logo" class="logo">
+      <h1>ContaGlass</h1>
+      <p class="muted">Acceso</p>
+      <div class="pin-group">
+        <input id="pin-input" type="password" inputmode="numeric" maxlength="6" minlength="4" placeholder="PIN (4–6 dígitos)">
+        <button id="btn-pin" class="btn primary">Entrar con PIN</button>
+      </div>
+      <p id="attempts" class="muted">Intentos restantes: 5</p>
+      <button id="btn-google" class="btn secondary">Continuar con Google</button>
+      <p id="lock-msg" class="danger hidden">Bloqueado por 5 intentos fallidos. Intenta más tarde.</p>
+    </div>
+  </main>
+
+  <!-- App principal -->
+  <header id="app-header" class="hidden">
+    <div class="brand">
+      <img id="company-logo" src="assets/logo.png" class="logo sm" alt="Logo empresa">
+      <span id="company-name">Mi Empresa</span>
+    </div>
+    <nav>
+      <button data-tab="dashboard" class="tab active">Dashboard</button>
+      <button data-tab="payroll" class="tab">Nómina</button>
+      <button data-tab="ledger" class="tab">Libro Mayor</button>
+      <button data-tab="settings" class="tab">Configuración</button>
+    </nav>
+    <div>
+      <button id="btn-logout" class="btn danger outline">Salir</button>
+    </div>
+  </header>
+
+  <section id="content" class="hidden">
+    <!-- Dashboard -->
+    <div id="tab-dashboard" class="tabview active">
+      <div class="kpis">
+        <div class="card glass kpi"><span class="label">Ingresos (mes)</span><strong id="kpi-income">$0</strong></div>
+        <div class="card glass kpi"><span class="label">Gastos (mes)</span><strong id="kpi-expense">$0</strong></div>
+        <div class="card glass kpi"><span class="label">Total Nómina (mes)</span><strong id="kpi-payroll">$0</strong></div>
+      </div>
+      <div class="grid-2">
+        <div class="card glass">
+          <h3>Flujo mensual (Ingresos vs Gastos)</h3>
+          <canvas id="chart-flow" height="160"></canvas>
+        </div>
+        <div class="card glass">
+          <h3>Gastos por categoría (Top 6)</h3>
+          <canvas id="chart-categories" height="160"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nómina -->
+    <div id="tab-payroll" class="tabview">
+      <div class="card glass">
+        <h3>Nuevo Registro de Nómina</h3>
+        <form id="payroll-form">
+          <div class="form-row">
+            <input id="emp-name" placeholder="Empleado" required>
+            <input id="emp-date" type="date" required>
+          </div>
+          <div class="form-row">
+            <input id="emp-gross" type="number" step="0.01" placeholder="Sueldo bruto" required>
+            <input id="emp-ret" type="number" step="0.01" placeholder="Retención % (ej. 7.5)" required>
+            <input id="emp-deductions" type="number" step="0.01" placeholder="Deducciones % (ej. 3.0)" value="0">
+          </div>
+          <div class="form-row">
+            <input id="emp-net" type="text" placeholder="Neto (auto)" disabled>
+            <button class="btn primary" type="submit">Guardar</button>
+            <button class="btn outline" id="payroll-export" type="button">Exportar PDF</button>
+          </div>
+        </form>
+      </div>
+      <div class="card glass">
+        <h3>Registros</h3>
+        <table class="table" id="payroll-table">
+          <thead><tr><th>Empleado</th><th>Fecha</th><th>Bruto</th><th>Ret %</th><th>Ded %</th><th>Neto</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Libro Mayor -->
+    <div id="tab-ledger" class="tabview">
+      <div class="card glass">
+        <h3>Nuevo Movimiento</h3>
+        <form id="ledger-form">
+          <div class="form-row">
+            <select id="mov-type">
+              <option value="ingreso">Ingreso</option>
+              <option value="gasto">Gasto</option>
+            </select>
+            <input id="mov-desc" placeholder="Descripción" required>
+            <input id="mov-category" placeholder="Categoría (ej. Renta, Marketing)" required>
+          </div>
+          <div class="form-row">
+            <input id="mov-amount" type="number" step="0.01" placeholder="Monto" required>
+            <input id="mov-date" type="date" required>
+            <button class="btn primary" type="submit">Agregar</button>
+            <button class="btn outline" id="ledger-export" type="button">Exportar PDF</button>
+          </div>
+        </form>
+      </div>
+      <div class="card glass">
+        <h3>Movimientos</h3>
+        <table class="table" id="ledger-table">
+          <thead><tr><th>Tipo</th><th>Descripción</th><th>Categoría</th><th>Monto</th><th>Fecha</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Configuración -->
+    <div id="tab-settings" class="tabview">
+      <div class="card glass">
+        <h3>Empresa</h3>
+        <form id="settings-form">
+          <div class="form-row">
+            <input id="cfg-name" placeholder="Nombre de empresa">
+            <input id="cfg-pin" type="password" placeholder="Nuevo PIN (4–6)">
+          </div>
+          <div class="form-row">
+            <input id="cfg-logo" type="file" accept="image/*">
+            <button class="btn primary" type="submit">Guardar</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card glass">
+        <h3>Backup</h3>
+        <div class="form-row">
+          <button id="btn-export-json" class="btn">Exportar JSON</button>
+          <input id="import-file" type="file" accept="application/json">
+          <button id="btn-import-json" class="btn secondary">Importar JSON</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Offline notice (solo referencia; la página real es offline.html) -->
+</body>
+</html>
